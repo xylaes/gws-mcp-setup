@@ -108,3 +108,69 @@ We configured the Google Agent Development Kit (ADK) and ran the `weather-assist
   ```
 * The **Agent Playground UI** successfully started and is accessible locally at:
   [http://127.0.0.1:8080/dev-ui/?app=app](http://127.0.0.1:8080/dev-ui/?app=app)
+
+---
+
+## 🚀 Part 3: `agents-cli-adk-lifecycle` CodeLab (Graph Workflows)
+
+We created a graph-based workflow agent called `customer-support-agent` using **ADK 2.0**:
+
+### 1. Creation and File System Workaround
+* Initialized the project without deployment files:
+  ```powershell
+  uvx google-agents-cli create customer-support-agent --agent adk --prototype --yes
+  ```
+* Encountered a Windows/OneDrive filesystem hardlink error (`os error 396`) during dependency installation.
+* Resolved by setting `UV_LINK_MODE="copy"` to force copies instead of hardlinks:
+  ```powershell
+  $env:UV_LINK_MODE="copy"; uvx google-agents-cli install
+  ```
+
+### 2. Graph Workflow Design
+We updated `app/agent.py` to route users based on query classification:
+* **START**: Enters the user query.
+* **`classify_query`** (Function Node): Uses a nested `classifier_agent` to determine if the query is `"shipping"` or `"unrelated"`.
+* **`shipping_faq_agent`** (LLM Node): An agent styled with playful emojis that answers shipping questions and highlights the **$50 free shipping threshold**.
+* **`politely_decline`** (Function Node): A Python node returning a static message politely refusing to answer non-shipping queries.
+* **Edges**: 
+  * `(START, classify_query)`
+  * `(classify_query, {"shipping": shipping_faq_agent, "unrelated": politely_decline})`
+
+### 3. Key Troubleshooting & Technical Fixes
+1. **Dynamic Node scheduling requirements:**
+   * **Problem:** Running `ctx.run_node` inside `classify_query` crashed because the caller node lacked resume permissions.
+   * **Resolution:** Set `rerun_on_resume=True` on the `@node` decorator:
+     ```python
+     @node(rerun_on_resume=True)
+     async def classify_query(ctx: Context, node_input: str) -> Event:
+     ```
+2. **Coerced Type Correction:**
+   * **Problem:** Invoking `ctx.run_node(...)` on an agent returned a raw string, causing `response.text` to throw `AttributeError: 'str' object has no attribute 'text'`.
+   * **Resolution:** Accessed the response directly as a string (`response.strip().lower()`).
+3. **Conversational Function Node Output:**
+   * **Problem:** Returning a raw string from `politely_decline` yielded an output event, but didn't display a text bubble in the CLI/Playground.
+   * **Resolution:** Modified the function return value to wrap it in a proper `Event` containing a message:
+     ```python
+     return Event(message="I'm sorry, but I can only assist with...")
+     ```
+
+### 4. Successful Verification Logs
+* **Shipping Query:**
+  ```
+  [user]: How much is standard shipping?
+  [classifier_agent]: shipping
+  [shipping_faq_agent]: OH MY GOSH! 🤩 ... If your order total is $50 or more, standard shipping is 100% FREE! 🎉💰
+  ```
+* **Duration Query:**
+  ```
+  [user]: How long does standard delivery take?
+  [classifier_agent]: shipping
+  [shipping_faq_agent]: you can expect your awesome items to arrive usually within 5 to 7 business days! 🗓️
+  ```
+* **Unrelated Query:**
+  ```
+  [user]: What is the capital of France?
+  [classifier_agent]: unrelated
+  [politely_decline]: I'm sorry, but I can only assist with questions related to shipping...
+  ```
+
