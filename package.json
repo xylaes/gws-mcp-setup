@@ -1,0 +1,16 @@
+{
+  "name": "my-first-project",
+  "version": "1.0.0",
+  "description": "",
+  "bin": {
+    "gnews": "./bin/index.js"
+  },
+  "type": "module",
+  "dependencies": {
+    "chalk": "^5.6.2",
+    "commander": "^15.0.0",
+    "inquirer": "^14.0.2",
+    "open": "^11.0.0",
+    "rss-parser": "^3.13.0"
+  }
+}

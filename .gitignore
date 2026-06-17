@@ -1,0 +1,10 @@
+.venv/
+node_modules/
+.agents/
+.gemini/
+__pycache__/
+*.pyc
+antigravity-skills/
+git_test/
+weather-assistant/
+
