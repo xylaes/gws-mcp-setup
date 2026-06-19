@@ -4,6 +4,31 @@ This repository documents the hands-on labs, custom implementations, and setup l
 
 ---
 
+## 🎯 Purpose of the Labs & Key Learning Objectives
+
+This repository is designed as a structured learning journey to master building, configuring, and debugging modern agentic systems. Through these hands-on labs, developers learn:
+
+* **Understanding Antigravity Agent Custom Skills:**
+  * How to write and configure custom skills in the `.agents/skills` folder.
+  * Moving from basic regex/keyword routing to multi-step procedural logic, few-shot prompting, and script-based schema validation.
+  * Writing effective `SKILL.md` instruction files so that AI agents automatically discover and execute skills.
+* **Building & Integrating Custom MCP Servers:**
+  * Understanding the Model Context Protocol (MCP) and how it enables LLMs to interact with secure local or external resources.
+  * Implementing custom Python `FastMCP` servers to securely fetch data (e.g., from the Google Calendar API) when official endpoints are restricted.
+  * Troubleshooting named pipe conflicts, lock files, and local server integration.
+* **GCP Authentication, OAuth, and API Scopes:**
+  * Navigating Google Cloud IAM, scopes, and Application Default Credentials (ADC).
+  * Bypassing security restrictions (such as CLI blocks on sensitive scopes like Google Calendar/Gmail) by creating custom Desktop App OAuth client IDs.
+* **Developing State-based Graph Workflows (ADK 2.0):**
+  * Building complex, stateful workflows with multiple nodes, conditional edges, and subagents.
+  * Implementing advanced control flow, including dynamic routing using classification agents.
+  * Handling execution state persistence and avoiding runtime crashes by setting `rerun_on_resume=True` on dynamic caller nodes.
+  * Structuring custom function nodes to properly emit conversational `Event` objects for the CLI and Web UI.
+* **Solving Environment-Specific Quirks:**
+  * Troubleshooting Windows-specific and OneDrive-specific pathing, package locking, and shell wildcard expansion bugs.
+
+---
+
 ## 📂 Project Structure
 
 ```
