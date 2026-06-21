@@ -31,11 +31,20 @@ By working through this lab, you will learn several high-value integration conce
 * Diagnosing named pipe locks (`connect ENOENT`) on Windows environments caused by orphaned background proxy processes.
 * Managing IDE config files (`mcp_config.json`) to register and sync local executable paths.
 
+### 5. Programmatic GCP Cost Controls
+* Leveraging GCP Pub/Sub billing events to trigger autonomous remediation.
+* Deploying python-based Cloud Functions subscribing to Pub/Sub events.
+* Using the Google Cloud Billing API to programmatically remove billing accounts from projects to implement hard caps.
+
 ---
 
 ## 📂 Repository Structure
 
 * 📄 **[README.md](file:///c:/Users/danny/OneDrive/Desktop/my-first-project/README.md)**: Main landing page summarizing the lab goals and learnings.
-* 📝 **[gws_mcp_setup_log.md](file:///c:/Users/danny/OneDrive/Desktop/my-first-project/gws_mcp_setup_log.md)**: A detailed chronological log of the configuration commands, issues encountered (such as Developer Preview API gates), and their technical resolutions.
-* 🐍 **[local_calendar_mcp.py](file:///c:/Users/danny/OneDrive/Desktop/my-first-project/local_calendar_mcp.py)**: The custom FastMCP server script running a direct Google Calendar integration.
+* 📝 **[gws_mcp_setup_log.md](file:///c:/Users/danny/OneDrive/Desktop/my-first-project/gws_mcp_setup_log.md)**: A detailed chronological log of the configuration commands, issues encountered, and their technical resolutions.
+* 🐍 **[local_calendar_mcp.py](file:///c:/Users/danny/OneDrive/Desktop/my-first-project/local_calendar_mcp.py)**: Custom FastMCP server script running a direct Google Calendar integration.
+* 📁 **[gcp-billing-cap/](file:///c:/Users/danny/OneDrive/Desktop/my-first-project/gcp-billing-cap)**: Cloud Function and PowerShell deployment automation to programmatically disable billing when budget alerts fire:
+  * 🐍 [main.py](file:///c:/Users/danny/OneDrive/Desktop/my-first-project/gcp-billing-cap/main.py): Cloud Function Python code.
+  * 📄 [requirements.txt](file:///c:/Users/danny/OneDrive/Desktop/my-first-project/gcp-billing-cap/requirements.txt): Required python dependencies.
+  * 🐚 [deploy.ps1](file:///c:/Users/danny/OneDrive/Desktop/my-first-project/gcp-billing-cap/deploy.ps1): Automated deployment script.
 * ⚙️ **[.gitignore](file:///c:/Users/danny/OneDrive/Desktop/my-first-project/.gitignore)**: Standard ignores to prevent committing environment packages (`.venv`) and system assets.
