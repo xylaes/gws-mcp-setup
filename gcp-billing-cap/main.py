@@ -11,6 +11,9 @@ PROJECT_ID = (
     os.environ.get("GCP_PROJECT")
     or os.environ.get("GOOGLE_CLOUD_PROJECT")
 )
+    or "gen-lang-client-0720914706"
+)
+
 
 def cap_billing(event, context):
     """Triggered from a message on a Cloud Pub/Sub topic.
