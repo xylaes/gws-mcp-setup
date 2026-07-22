@@ -1,8 +1,8 @@
 import time
 
-def get_user_data(users, id):
+def get_user_data(users, user_id):
    # Find user by ID
-   return next((u for u in users if u['id'] == id), None)
+   return next((u for u in users if u['id'] == user_id), None)
 
 def process_payments(items):
    total = 0
@@ -20,11 +20,11 @@ def run_batch():
   
    u = get_user_data(users, 3)
    if u is not None:
-       print("User found: " + u['name'])
+       print(f"User found: {u['name']}")
    else:
        print("User not found")
   
-   print("Total: " + str(process_payments(items)))
+   print(f"Total: {process_payments(items)}")
 
 if __name__ == "__main__":
    run_batch()
