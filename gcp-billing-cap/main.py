@@ -10,6 +10,7 @@ billing_client = billing_v1.CloudBillingClient()
 PROJECT_ID = (
     os.environ.get("GCP_PROJECT")
     or os.environ.get("GOOGLE_CLOUD_PROJECT")
+)
     or "gen-lang-client-0720914706"
 )
 
@@ -35,6 +36,10 @@ def cap_billing(event, context):
 
     # 2. Check if we have met or exceeded the budget limit ($100)
     if cost_amount >= budget_amount:
+        if not PROJECT_ID:
+            print("Error: Project ID could not be determined. Please set GCP_PROJECT or GOOGLE_CLOUD_PROJECT.")
+            return
+
         print(
             f"Cost of ${cost_amount:.2f} meets or exceeds budget limit of ${budget_amount:.2f}. Disabling billing..."
         )
