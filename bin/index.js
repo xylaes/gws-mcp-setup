@@ -117,8 +117,17 @@ async function main() {
       ]);
 
       if (answers.articleUrl && answers.articleUrl !== 'exit') {
-        console.log(chalk.green(`\nOpening article in your default browser...`));
-        await open(answers.articleUrl);
+        try {
+          const parsedUrl = new URL(answers.articleUrl);
+          if (parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:') {
+            console.log(chalk.green(`\nOpening article in your default browser...`));
+            await open(answers.articleUrl);
+          } else {
+            console.error(chalk.red('\nError: Only http and https URLs are allowed.'));
+          }
+        } catch (err) {
+          console.error(chalk.red('\nError: Invalid URL.'));
+        }
       }
     } else {
       // Print beautifully to terminal

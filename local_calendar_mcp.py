@@ -2,19 +2,28 @@ import google.auth
 import google.auth.transport.requests
 import requests
 import json
+import urllib.parse
 from datetime import datetime, timedelta
 from mcp.server.fastmcp import FastMCP
 
 # Initialize FastMCP Server
 mcp = FastMCP("Local Google Calendar MCP")
 
+_cached_credentials = None
+
 def get_auth_headers():
     """Retrieves fresh Google ADC authentication headers."""
-    credentials, project = google.auth.default()
-    auth_req = google.auth.transport.requests.Request()
-    credentials.refresh(auth_req)
+    global _cached_credentials
+
+    if _cached_credentials is None:
+        _cached_credentials, project = google.auth.default()
+
+    if not _cached_credentials.valid:
+        auth_req = google.auth.transport.requests.Request()
+        _cached_credentials.refresh(auth_req)
+
     return {
-        "Authorization": f"Bearer {credentials.token}",
+        "Authorization": f"Bearer {_cached_credentials.token}",
         "Accept": "application/json"
     }
 
@@ -59,7 +68,8 @@ def list_events(calendar_id: str = "primary", start_time: str = None, end_time: 
         if not end_time:
             end_time = (datetime.utcnow() + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0).isoformat() + "Z"
             
-        url = f"https://www.googleapis.com/calendar/v3/calendars/{calendar_id}/events"
+        safe_calendar_id = urllib.parse.quote(calendar_id, safe="")
+        url = f"https://www.googleapis.com/calendar/v3/calendars/{safe_calendar_id}/events"
         params = {
             "timeMin": start_time,
             "timeMax": end_time,

@@ -3,6 +3,9 @@ from unittest.mock import patch, MagicMock
 import base64
 import json
 
+# Mock the billing_v1.CloudBillingClient before importing main
+patch('google.cloud.billing_v1.CloudBillingClient').start()
+
 # Import the module to be tested
 import main
 
