@@ -4,7 +4,7 @@ import os
 from google.cloud import billing_v1
 
 # The project ID where you want to disable billing
-PROJECT_ID = os.environ.get("GCP_PROJECT") or os.environ.get("GOOGLE_CLOUD_PROJECT") or "gen-lang-client-0720914706"
+PROJECT_ID = os.environ.get("GCP_PROJECT") or os.environ.get("GOOGLE_CLOUD_PROJECT")
 
 def cap_billing(event, context):
     """Triggered from a message on a Cloud Pub/Sub topic.
@@ -27,6 +27,10 @@ def cap_billing(event, context):
 
     # 2. Check if we have met or exceeded the budget limit ($100)
     if cost_amount >= budget_amount:
+        if not PROJECT_ID:
+            print("Error: Project ID could not be determined. Please set GCP_PROJECT or GOOGLE_CLOUD_PROJECT.")
+            return
+
         print(f"Cost of ${cost_amount:.2f} meets or exceeds budget limit of ${budget_amount:.2f}. Disabling billing...")
         disable_billing(PROJECT_ID)
     else:
