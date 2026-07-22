@@ -8,13 +8,21 @@ from mcp.server.fastmcp import FastMCP
 # Initialize FastMCP Server
 mcp = FastMCP("Local Google Calendar MCP")
 
+_cached_credentials = None
+
 def get_auth_headers():
     """Retrieves fresh Google ADC authentication headers."""
-    credentials, project = google.auth.default()
-    auth_req = google.auth.transport.requests.Request()
-    credentials.refresh(auth_req)
+    global _cached_credentials
+
+    if _cached_credentials is None:
+        _cached_credentials, project = google.auth.default()
+
+    if not _cached_credentials.valid:
+        auth_req = google.auth.transport.requests.Request()
+        _cached_credentials.refresh(auth_req)
+
     return {
-        "Authorization": f"Bearer {credentials.token}",
+        "Authorization": f"Bearer {_cached_credentials.token}",
         "Accept": "application/json"
     }
 
