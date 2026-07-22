@@ -3,9 +3,6 @@ import json
 import os
 from google.cloud import billing_v1
 
-# Initialize the client once outside the function to reuse across invocations
-billing_client = billing_v1.CloudBillingClient()
-
 # The project ID where you want to disable billing
 PROJECT_ID = (
     os.environ.get("GCP_PROJECT")
@@ -45,13 +42,14 @@ def cap_billing(event, context):
 
 def disable_billing(project_id):
     """Disable billing for the specified project by removing its billing account."""
+    client = billing_v1.CloudBillingClient()
     project_name = f"projects/{project_id}"
 
     # Setting billing_account_name to an empty string disables billing on the project
     billing_info = billing_v1.ProjectBillingInfo(billing_account_name="")
 
     try:
-        response = billing_client.update_project_billing_info(
+        response = client.update_project_billing_info(
             name=project_name, project_billing_info=billing_info
         )
         print(f"Successfully disabled billing for {project_id}: {response}")
