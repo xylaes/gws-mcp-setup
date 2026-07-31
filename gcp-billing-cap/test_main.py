@@ -23,13 +23,30 @@ def mock_disable_billing(mocker):
 @pytest.fixture
 def mock_billing_client(mocker):
     # Mock the billing_client inside main.py
-    return mocker.patch("main.billing_client")
+    mock_client_class = mocker.patch("main.billing_v1.CloudBillingClient")
+    mock_client_instance = MagicMock()
+    mock_client_class.return_value = mock_client_instance
+    return mock_client_instance
 
 
 def test_cap_billing_no_data():
     event = {}
     main.cap_billing(event, None)
     # the function just returns and prints
+
+
+def test_cap_billing_invalid_base64(mock_disable_billing):
+    event = {"data": "invalid_base64_string_!@#$"}
+    main.cap_billing(event, None)
+    mock_disable_billing.assert_not_called()
+
+
+def test_cap_billing_invalid_json(mock_disable_billing):
+    # Valid base64, but invalid JSON (e.g., "not a json")
+    encoded_data = base64.b64encode(b"not a json").decode("utf-8")
+    event = {"data": encoded_data}
+    main.cap_billing(event, None)
+    mock_disable_billing.assert_not_called()
 
 
 def test_cap_billing_under_budget(mock_disable_billing):
