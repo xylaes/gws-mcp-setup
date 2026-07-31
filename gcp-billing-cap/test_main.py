@@ -22,14 +22,26 @@ def mock_disable_billing(mocker):
 
 @pytest.fixture
 def mock_billing_client(mocker):
-    # Mock the billing_client inside main.py
-    return mocker.patch("main.billing_client")
+    # Mock the CloudBillingClient constructor in main.py
+    mock_class = mocker.patch("main.billing_v1.CloudBillingClient")
+    mock_instance = MagicMock()
+    mock_class.return_value = mock_instance
+    return mock_instance
 
 
 def test_cap_billing_no_data():
     event = {}
     main.cap_billing(event, None)
-    # the function just returns and prints
+    # Just verify it returns gracefully without raising errors
+
+
+def test_cap_billing_invalid_json(mock_disable_billing):
+    # base64 encoded invalid json
+    encoded_data = base64.b64encode(b"invalid-json").decode("utf-8")
+    event = {"data": encoded_data}
+
+    with pytest.raises(json.JSONDecodeError):
+        main.cap_billing(event, None)
 
 
 def test_cap_billing_under_budget(mock_disable_billing):
@@ -65,10 +77,21 @@ def test_cap_billing_over_budget(mock_disable_billing):
     mock_disable_billing.assert_called_once_with(main.PROJECT_ID)
 
 
+def test_cap_billing_missing_fields(mock_disable_billing):
+    # Missing costAmount and budgetAmount in data (default to 0.0)
+    data = {}
+    encoded_data = base64.b64encode(json.dumps(data).encode("utf-8")).decode("utf-8")
+    event = {"data": encoded_data}
+
+    main.cap_billing(event, None)
+
+    # Since 0.0 >= 0.0 (both default to 0.0), it should disable billing
+    mock_disable_billing.assert_called_once_with(main.PROJECT_ID)
+
+
 def test_disable_billing_success(mock_billing_client):
     project_id = "test-project-123"
 
-    # Configure mock response if needed, although disable_billing just prints it
     mock_response = MagicMock()
     mock_billing_client.update_project_billing_info.return_value = mock_response
 
@@ -98,50 +121,3 @@ def test_disable_billing_failure(mock_billing_client):
 
     assert str(exc_info.value) == "API error"
     mock_billing_client.update_project_billing_info.assert_called_once()
-import unittest
-from unittest.mock import patch, MagicMock
-
-# Mock google.auth.default to bypass credentials loading during import
-with patch("google.auth.default", return_value=(MagicMock(), "mock-project-id")):
-    import main
-
-
-class TestDisableBilling(unittest.TestCase):
-
-    @patch("main.billing_v1.CloudBillingClient")
-    def test_disable_billing_success(self, mock_client_class):
-        # Setup mock client instance
-        mock_client = MagicMock()
-        mock_client_class.return_value = mock_client
-
-        # Call the function
-        project_id = "test-project-123"
-        main.disable_billing(project_id)
-
-        # Verify the API was called correctly
-        expected_name = f"projects/{project_id}"
-
-        # Verify update_project_billing_info was called
-        mock_client.update_project_billing_info.assert_called_once()
-
-        # Get the arguments it was called with
-        kwargs = mock_client.update_project_billing_info.call_args.kwargs
-        self.assertEqual(kwargs["name"], expected_name)
-        self.assertEqual(kwargs["project_billing_info"].billing_account_name, "")
-
-    @patch("main.billing_v1.CloudBillingClient")
-    def test_disable_billing_error(self, mock_client_class):
-        # Setup mock client to raise an exception
-        mock_client = MagicMock()
-        mock_client.update_project_billing_info.side_effect = Exception("API Error")
-        mock_client_class.return_value = mock_client
-
-        # Verify the exception is raised when calling the function
-        with self.assertRaises(Exception) as context:
-            main.disable_billing("test-project-123")
-
-        self.assertEqual(str(context.exception), "API Error")
-
-
-if __name__ == "__main__":
-    unittest.main()
