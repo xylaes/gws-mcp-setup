@@ -1,12 +1,16 @@
 import json
 import base64
 import sys
+import os
 import pytest
 from unittest.mock import MagicMock, patch
 from google.cloud import billing_v1
 
 # Patch google.auth.default to prevent DefaultCredentialsError when main is imported
 patch("google.auth.default", return_value=(MagicMock(), "mock-project")).start()
+
+# Set environmental project ID so that main.PROJECT_ID is populated during import
+os.environ["GCP_PROJECT"] = "test-project-123"
 
 # Add directory to sys.path to resolve imports
 sys.path.append("gcp-billing-cap")
@@ -98,3 +102,31 @@ def test_disable_billing_failure(mock_billing_client):
 
     assert str(exc_info.value) == "API error"
     mock_billing_client.update_project_billing_info.assert_called_once()
+
+
+def test_cap_billing_missing_project_id(mocker):
+    # Temporarily set main.PROJECT_ID to None to simulate missing environment variable
+    original_project_id = main.PROJECT_ID
+    main.PROJECT_ID = None
+    try:
+        data = {"costAmount": 100.0, "budgetAmount": 100.0}
+        encoded_data = base64.b64encode(json.dumps(data).encode("utf-8")).decode(
+            "utf-8"
+        )
+        event = {"data": encoded_data}
+
+        with pytest.raises(ValueError) as exc_info:
+            main.cap_billing(event, None)
+        assert (
+            "GCP_PROJECT or GOOGLE_CLOUD_PROJECT environment variable is not set"
+            in str(exc_info.value)
+        )
+    finally:
+        # Restore PROJECT_ID
+        main.PROJECT_ID = original_project_id
+
+
+def test_disable_billing_missing_project_id():
+    with pytest.raises(ValueError) as exc_info:
+        main.disable_billing(None)
+    assert "Project ID must be specified" in str(exc_info.value)
