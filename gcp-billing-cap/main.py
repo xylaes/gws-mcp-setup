@@ -18,8 +18,12 @@ def cap_billing(event, context):
         print("No data in Pub/Sub event.")
         return
 
-    pubsub_message = base64.b64decode(event["data"]).decode("utf-8")
-    data = json.loads(pubsub_message)
+    try:
+        pubsub_message = base64.b64decode(event["data"]).decode("utf-8")
+        data = json.loads(pubsub_message)
+    except Exception as e:
+        print(f"Error decoding or parsing Pub/Sub message: {e}")
+        return
 
     cost_amount = data.get("costAmount", 0.0)
     budget_amount = data.get("budgetAmount", 0.0)
