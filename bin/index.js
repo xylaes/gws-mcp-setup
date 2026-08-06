@@ -40,7 +40,7 @@ function getFeedUrl(opts) {
       console.warn(chalk.yellow(`Available topics: ${TOPICS.join(', ')}`));
       console.warn(chalk.yellow('Attempting to fetch anyway...\n'));
     }
-    return `${baseUrl}/headlines/section/topic/${topicLower.toUpperCase()}?${params}`;
+    return `${baseUrl}/headlines/section/topic/${encodeURIComponent(topicLower.toUpperCase())}?${params}`;
   }
 
   return `${baseUrl}?${params}`;

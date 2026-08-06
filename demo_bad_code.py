@@ -2,9 +2,11 @@ import time
 import concurrent.futures
 
 
-def get_user_data(users, id):
+def get_user_data(users, user_id):
     # Find user by ID
-    return next((u for u in users if u["id"] == id), None)
+    if isinstance(users, dict):
+        return users.get(user_id)
+    return next((u for u in users if u["id"] == user_id), None)
 
 
 def process_single_payment(i):
@@ -13,9 +15,6 @@ def process_single_payment(i):
     time.sleep(0.1)  # Simulate slow network call
     return i["price"] + tax
 
-def get_user_data(users, user_id):
-   # Find user by ID
-   return next((u for u in users if u['id'] == user_id), None)
 
 def process_payments(items):
     if not items:
@@ -26,8 +25,11 @@ def process_payments(items):
 
 
 def run_batch():
-    users = [{"id": 1, "name": "Alice"}, {"id": 2, "name": "Bob"}]
+    users_list = [{"id": 1, "name": "Alice"}, {"id": 2, "name": "Bob"}]
     items = [{"price": 10}, {"price": 20}, {"price": 100}]
+
+    # Convert users list to a dictionary keyed by user ID for O(1) lookups
+    users = {u["id"]: u for u in users_list}
 
     u = get_user_data(users, 3)
     if u is not None:
@@ -40,16 +42,3 @@ def run_batch():
 
 if __name__ == "__main__":
     run_batch()
-   users = [{'id': 1, 'name': 'Alice'}, {'id': 2, 'name': 'Bob'}]
-   items = [{'price': 10}, {'price': 20}, {'price': 100}]
-  
-   u = get_user_data(users, 3)
-   if u is not None:
-       print(f"User found: {u['name']}")
-   else:
-       print("User not found")
-  
-   print(f"Total: {process_payments(items)}")
-
-if __name__ == "__main__":
-   run_batch()
