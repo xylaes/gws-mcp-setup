@@ -1,23 +1,31 @@
 import os
 import argparse
 import mimetypes
+import threading
 import google.auth
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaFileUpload
 
+# Global cache for the Google Drive API service client
+_service_cache = None
+_service_lock = threading.Lock()
+
+
 def upload_file(file_path, drive_filename=None):
     """
     Uploads a file to Google Drive using Application Default Credentials (ADC).
-    
+
     Args:
         file_path (str): Path to the local file to upload.
         drive_filename (str): Optional name to give the file in Google Drive.
                               Defaults to the local file's base name.
-    
+
     Returns:
         str: The uploaded file's ID if successful, otherwise None.
     """
+    global _service_cache
+
     if not os.path.exists(file_path):
         print(f"Error: Local file '{file_path}' does not exist.")
         return None
@@ -26,21 +34,28 @@ def upload_file(file_path, drive_filename=None):
     local_filename = os.path.basename(file_path)
     if not drive_filename:
         drive_filename = local_filename
-        
+
     # Automatically guess the MIME type
     mime_type, _ = mimetypes.guess_type(file_path)
     if not mime_type:
-        mime_type = "application/octet-stream" # Fallback binary type
+        mime_type = "application/octet-stream"  # Fallback binary type
 
-    print(f"Uploading '{file_path}' as '{drive_filename}' ({mime_type}) to Google Drive...")
+    print(
+        f"Uploading '{file_path}' as '{drive_filename}' ({mime_type}) to Google Drive..."
+    )
 
-    # Load Application Default Credentials (ADC)
-    # Since you ran `gcloud auth application-default login`, this will automatically load your credentials
-    creds, _ = google.auth.default()
+    # Load and build Google Drive API service client if not already cached
+    if _service_cache is None:
+        with _service_lock:
+            if _service_cache is None:
+                # Load Application Default Credentials (ADC)
+                # Since you ran `gcloud auth application-default login`, this will automatically load your credentials
+                creds, _ = google.auth.default()
+                # Build the Drive API service client
+                _service_cache = build("drive", "v3", credentials=creds)
 
     try:
-        # Build the Drive API service client
-        service = build("drive", "v3", credentials=creds)
+        service = _service_cache
 
         # Define file metadata in Drive
         file_metadata = {"name": drive_filename}
@@ -63,13 +78,14 @@ def upload_file(file_path, drive_filename=None):
         print(f"An error occurred while uploading to Google Drive: {error}")
         return None
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Upload a local file to Google Drive.")
     parser.add_argument("file_path", help="Path to the local file to upload.")
     parser.add_argument(
-        "--name", 
-        help="Optional name to give the file in Google Drive (defaults to local file name)."
+        "--name",
+        help="Optional name to give the file in Google Drive (defaults to local file name).",
     )
-    
+
     args = parser.parse_args()
     upload_file(args.file_path, args.name)

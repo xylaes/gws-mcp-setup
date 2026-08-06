@@ -23,8 +23,11 @@ def process_payments(items):
 
 
 def run_batch():
-    users = [{"id": 1, "name": "Alice"}, {"id": 2, "name": "Bob"}]
+    users_list = [{"id": 1, "name": "Alice"}, {"id": 2, "name": "Bob"}]
     items = [{"price": 10}, {"price": 20}, {"price": 100}]
+
+    # Convert users list to a dictionary keyed by user ID for O(1) lookups
+    users = {u["id"]: u for u in users_list}
 
     u = get_user_data(users, 3)
     if u is not None:

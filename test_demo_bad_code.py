@@ -21,6 +21,11 @@ class TestGetUserData(unittest.TestCase):
         user = get_user_data([], 1)
         self.assertIsNone(user)
 
+    def test_get_user_data_dictionary(self):
+        """Test happy path where users is a dictionary (optimized lookup)."""
+        users_dict = {1: {"id": 1, "name": "Alice"}, 2: {"id": 2, "name": "Bob"}}
+        user = get_user_data(users_dict, 1)
+        self.assertEqual(user, {"id": 1, "name": "Alice"})
 
 class TestProcessPayments(unittest.TestCase):
     def test_process_payments_normal(self):
