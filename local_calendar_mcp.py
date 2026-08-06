@@ -3,7 +3,7 @@ import google.auth.transport.requests
 import requests
 import json
 import urllib.parse
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from mcp.server.fastmcp import FastMCP
 
 # Initialize FastMCP Server
@@ -64,9 +64,9 @@ def list_events(calendar_id: str = "primary", start_time: str = None, end_time: 
         
         # Default time boundaries to today if not provided
         if not start_time:
-            start_time = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0).isoformat() + "Z"
+            start_time = datetime.now(timezone.utc).replace(tzinfo=None).replace(hour=0, minute=0, second=0, microsecond=0).isoformat() + "Z"
         if not end_time:
-            end_time = (datetime.utcnow() + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0).isoformat() + "Z"
+            end_time = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0).isoformat() + "Z"
             
         safe_calendar_id = urllib.parse.quote(calendar_id, safe="")
         url = f"https://www.googleapis.com/calendar/v3/calendars/{safe_calendar_id}/events"
