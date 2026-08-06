@@ -1,5 +1,6 @@
 import unittest
-from demo_bad_code import get_user_data, process_payments
+from unittest.mock import patch
+from demo_bad_code import get_user_data, process_payments, process_single_payment
 
 
 class TestGetUserData(unittest.TestCase):
@@ -21,9 +22,41 @@ class TestGetUserData(unittest.TestCase):
         user = get_user_data([], 1)
         self.assertIsNone(user)
 
+    def test_get_user_data_dictionary(self):
+        """Test happy path where users is a dictionary (optimized lookup)."""
+        users_dict = {1: {"id": 1, "name": "Alice"}, 2: {"id": 2, "name": "Bob"}}
+        user = get_user_data(users_dict, 1)
+        self.assertEqual(user, {"id": 1, "name": "Alice"})
 
-if __name__ == "__main__":
-    unittest.main()
+        # Test not found
+        user_not_found = get_user_data(users_dict, 3)
+        self.assertIsNone(user_not_found)
+
+
+class TestProcessSinglePayment(unittest.TestCase):
+    @patch("demo_bad_code.time.sleep", return_value=None)
+    def test_process_single_payment_happy_path(self, mock_sleep):
+        """Test process_single_payment with standard valid pricing."""
+        item = {"price": 100}
+        result = process_single_payment(item)
+        self.assertEqual(result, 110.0)
+        mock_sleep.assert_called_once_with(0.1)
+
+    @patch("demo_bad_code.time.sleep", return_value=None)
+    def test_process_single_payment_zero_price(self, mock_sleep):
+        """Test process_single_payment with zero price."""
+        item = {"price": 0}
+        result = process_single_payment(item)
+        self.assertEqual(result, 0.0)
+        mock_sleep.assert_called_once_with(0.1)
+
+    @patch("demo_bad_code.time.sleep", return_value=None)
+    def test_process_single_payment_negative_price(self, mock_sleep):
+        """Test process_single_payment with negative price (edge case)."""
+        item = {"price": -50}
+        result = process_single_payment(item)
+        self.assertEqual(result, -55.0)
+        mock_sleep.assert_called_once_with(0.1)
 
 
 class TestProcessPayments(unittest.TestCase):
@@ -36,3 +69,7 @@ class TestProcessPayments(unittest.TestCase):
         items = []
         total = process_payments(items)
         self.assertEqual(total, 0)
+
+
+if __name__ == "__main__":
+    unittest.main()

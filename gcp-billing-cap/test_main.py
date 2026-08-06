@@ -1,12 +1,16 @@
 import json
 import base64
 import sys
+import os
 import pytest
 from unittest.mock import MagicMock, patch
 from google.cloud import billing_v1
 
 # Patch google.auth.default to prevent DefaultCredentialsError when main is imported
 patch("google.auth.default", return_value=(MagicMock(), "mock-project")).start()
+
+# Set environmental project ID so that main.PROJECT_ID is populated during import
+os.environ["GCP_PROJECT"] = "test-project-123"
 
 # Add directory to sys.path to resolve imports
 sys.path.append("gcp-billing-cap")
@@ -42,6 +46,20 @@ def test_cap_billing_invalid_json(mock_disable_billing):
 
     with pytest.raises(json.JSONDecodeError):
         main.cap_billing(event, None)
+
+
+def test_cap_billing_invalid_base64(mock_disable_billing):
+    event = {"data": "invalid_base64_string_!@#$"}
+    main.cap_billing(event, None)
+    mock_disable_billing.assert_not_called()
+
+
+def test_cap_billing_invalid_json(mock_disable_billing):
+    # Valid base64, but invalid JSON (e.g., "not a json")
+    encoded_data = base64.b64encode(b"not a json").decode("utf-8")
+    event = {"data": encoded_data}
+    main.cap_billing(event, None)
+    mock_disable_billing.assert_not_called()
 
 
 def test_cap_billing_under_budget(mock_disable_billing):

@@ -4,11 +4,7 @@ import os
 from google.cloud import billing_v1
 
 # The project ID where you want to disable billing
-PROJECT_ID = (
-    os.environ.get("GCP_PROJECT")
-    or os.environ.get("GOOGLE_CLOUD_PROJECT")
-    or "gen-lang-client-0720914706"
-)
+PROJECT_ID = os.environ.get("GCP_PROJECT") or os.environ.get("GOOGLE_CLOUD_PROJECT")
 
 
 def cap_billing(event, context):
@@ -22,8 +18,12 @@ def cap_billing(event, context):
         print("No data in Pub/Sub event.")
         return
 
-    pubsub_message = base64.b64decode(event["data"]).decode("utf-8")
-    data = json.loads(pubsub_message)
+    try:
+        pubsub_message = base64.b64decode(event["data"]).decode("utf-8")
+        data = json.loads(pubsub_message)
+    except Exception as e:
+        print(f"Error decoding or parsing Pub/Sub message: {e}")
+        return
 
     cost_amount = data.get("costAmount", 0.0)
     budget_amount = data.get("budgetAmount", 0.0)
@@ -35,6 +35,10 @@ def cap_billing(event, context):
         print(
             f"Cost of ${cost_amount:.2f} meets or exceeds budget limit of ${budget_amount:.2f}. Disabling billing..."
         )
+        if not PROJECT_ID:
+            raise ValueError(
+                "GCP_PROJECT or GOOGLE_CLOUD_PROJECT environment variable is not set."
+            )
         disable_billing(PROJECT_ID)
     else:
         print(f"Current cost of ${cost_amount:.2f} is within budget. No action taken.")
@@ -42,6 +46,8 @@ def cap_billing(event, context):
 
 def disable_billing(project_id):
     """Disable billing for the specified project by removing its billing account."""
+    if not project_id:
+        raise ValueError("Project ID must be specified to disable billing.")
     client = billing_v1.CloudBillingClient()
     project_name = f"projects/{project_id}"
 
