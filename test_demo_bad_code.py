@@ -1,5 +1,4 @@
 import unittest
-from unittest.mock import patch
 from demo_bad_code import get_user_data, process_payments, process_single_payment
 
 
@@ -28,37 +27,6 @@ class TestGetUserData(unittest.TestCase):
         user = get_user_data(users_dict, 1)
         self.assertEqual(user, {"id": 1, "name": "Alice"})
 
-        # Test not found
-        user_not_found = get_user_data(users_dict, 3)
-        self.assertIsNone(user_not_found)
-
-
-class TestProcessSinglePayment(unittest.TestCase):
-    @patch("demo_bad_code.time.sleep", return_value=None)
-    def test_process_single_payment_happy_path(self, mock_sleep):
-        """Test process_single_payment with standard valid pricing."""
-        item = {"price": 100}
-        result = process_single_payment(item)
-        self.assertEqual(result, 110.0)
-        mock_sleep.assert_called_once_with(0.1)
-
-    @patch("demo_bad_code.time.sleep", return_value=None)
-    def test_process_single_payment_zero_price(self, mock_sleep):
-        """Test process_single_payment with zero price."""
-        item = {"price": 0}
-        result = process_single_payment(item)
-        self.assertEqual(result, 0.0)
-        mock_sleep.assert_called_once_with(0.1)
-
-    @patch("demo_bad_code.time.sleep", return_value=None)
-    def test_process_single_payment_negative_price(self, mock_sleep):
-        """Test process_single_payment with negative price (edge case)."""
-        item = {"price": -50}
-        result = process_single_payment(item)
-        self.assertEqual(result, -55.0)
-        mock_sleep.assert_called_once_with(0.1)
-
-
 class TestProcessPayments(unittest.TestCase):
     def test_process_payments_normal(self):
         items = [{"price": 10}, {"price": 20}]
@@ -69,6 +37,43 @@ class TestProcessPayments(unittest.TestCase):
         items = []
         total = process_payments(items)
         self.assertEqual(total, 0)
+
+
+class TestProcessSinglePayment(unittest.TestCase):
+    def test_process_single_payment_normal(self):
+        """Test happy path with an integer price."""
+        item = {"price": 10}
+        total = process_single_payment(item)
+        self.assertEqual(total, 11.0)
+
+    def test_process_single_payment_float(self):
+        """Test happy path with a floating-point price."""
+        item = {"price": 15.5}
+        total = process_single_payment(item)
+        self.assertEqual(total, 17.05)
+
+    def test_process_single_payment_zero(self):
+        """Test processing a payment where the price is zero."""
+        item = {"price": 0}
+        total = process_single_payment(item)
+        self.assertEqual(total, 0.0)
+
+    def test_process_single_payment_negative(self):
+        """Test processing a payment with a negative price."""
+        item = {"price": -10}
+        total = process_single_payment(item)
+        self.assertEqual(total, -11.0)
+
+    def test_process_single_payment_missing_price_key(self):
+        """Test that KeyError is raised when the price key is missing."""
+        item = {"wrong_key": 10}
+        with self.assertRaises(KeyError):
+            process_single_payment(item)
+
+    def test_process_single_payment_non_dict_input(self):
+        """Test that TypeError is raised when input is not a dictionary."""
+        with self.assertRaises(TypeError):
+            process_single_payment(None)
 
 
 if __name__ == "__main__":

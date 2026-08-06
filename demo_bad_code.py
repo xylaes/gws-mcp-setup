@@ -4,8 +4,6 @@ import concurrent.futures
 
 def get_user_data(users, user_id):
     # Find user by ID
-    if isinstance(users, dict):
-        return users.get(user_id)
     return next((u for u in users if u["id"] == user_id), None)
 
 
