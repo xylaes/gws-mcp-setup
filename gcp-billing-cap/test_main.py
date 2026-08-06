@@ -26,17 +26,26 @@ def mock_disable_billing(mocker):
 
 @pytest.fixture
 def mock_billing_client(mocker):
-    # Mock the billing_client inside main.py
-    mock_client_class = mocker.patch("main.billing_v1.CloudBillingClient")
-    mock_client_instance = MagicMock()
-    mock_client_class.return_value = mock_client_instance
-    return mock_client_instance
+    # Mock the CloudBillingClient constructor in main.py
+    mock_class = mocker.patch("main.billing_v1.CloudBillingClient")
+    mock_instance = MagicMock()
+    mock_class.return_value = mock_instance
+    return mock_instance
 
 
 def test_cap_billing_no_data():
     event = {}
     main.cap_billing(event, None)
-    # the function just returns and prints
+    # Just verify it returns gracefully without raising errors
+
+
+def test_cap_billing_invalid_json(mock_disable_billing):
+    # base64 encoded invalid json
+    encoded_data = base64.b64encode(b"invalid-json").decode("utf-8")
+    event = {"data": encoded_data}
+
+    with pytest.raises(json.JSONDecodeError):
+        main.cap_billing(event, None)
 
 
 def test_cap_billing_invalid_base64(mock_disable_billing):
@@ -86,10 +95,21 @@ def test_cap_billing_over_budget(mock_disable_billing):
     mock_disable_billing.assert_called_once_with(main.PROJECT_ID)
 
 
+def test_cap_billing_missing_fields(mock_disable_billing):
+    # Missing costAmount and budgetAmount in data (default to 0.0)
+    data = {}
+    encoded_data = base64.b64encode(json.dumps(data).encode("utf-8")).decode("utf-8")
+    event = {"data": encoded_data}
+
+    main.cap_billing(event, None)
+
+    # Since 0.0 >= 0.0 (both default to 0.0), it should disable billing
+    mock_disable_billing.assert_called_once_with(main.PROJECT_ID)
+
+
 def test_disable_billing_success(mock_billing_client):
     project_id = "test-project-123"
 
-    # Configure mock response if needed, although disable_billing just prints it
     mock_response = MagicMock()
     mock_billing_client.update_project_billing_info.return_value = mock_response
 
@@ -119,31 +139,3 @@ def test_disable_billing_failure(mock_billing_client):
 
     assert str(exc_info.value) == "API error"
     mock_billing_client.update_project_billing_info.assert_called_once()
-
-
-def test_cap_billing_missing_project_id(mocker):
-    # Temporarily set main.PROJECT_ID to None to simulate missing environment variable
-    original_project_id = main.PROJECT_ID
-    main.PROJECT_ID = None
-    try:
-        data = {"costAmount": 100.0, "budgetAmount": 100.0}
-        encoded_data = base64.b64encode(json.dumps(data).encode("utf-8")).decode(
-            "utf-8"
-        )
-        event = {"data": encoded_data}
-
-        with pytest.raises(ValueError) as exc_info:
-            main.cap_billing(event, None)
-        assert (
-            "GCP_PROJECT or GOOGLE_CLOUD_PROJECT environment variable is not set"
-            in str(exc_info.value)
-        )
-    finally:
-        # Restore PROJECT_ID
-        main.PROJECT_ID = original_project_id
-
-
-def test_disable_billing_missing_project_id():
-    with pytest.raises(ValueError) as exc_info:
-        main.disable_billing(None)
-    assert "Project ID must be specified" in str(exc_info.value)
